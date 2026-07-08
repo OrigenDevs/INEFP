@@ -84,7 +84,7 @@ Material:
     m_Ints: []
     m_Floats:
     - _AlphaCutoff: 0.5
-    - _BumpScale: 1
+    - _BumpScale: 0.5
     - _Cutoff: 0.5
     - _DetailNormalMapScale: 1
     - _DstBlend: 0
@@ -93,7 +93,7 @@ Material:
     - _Glossiness: 0.5
     - _GlossyReflections: 1
     - _MainMetallicPower: 0
-    - _MainSmoothnessPower: 1
+    - _MainSmoothnessPower: 0
     - _Metallic: 0
     - _Mode: 0
     - _OcclusionStrength: 1

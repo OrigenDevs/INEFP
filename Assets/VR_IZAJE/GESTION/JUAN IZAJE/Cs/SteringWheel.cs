@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class SteeringWheelLimiterVec : MonoBehaviour
+public class SteeringWheelLimiter : MonoBehaviour
 {
     public enum SteeringAxis { X, Y, Z }
 
@@ -9,57 +9,62 @@ public class SteeringWheelLimiterVec : MonoBehaviour
     [SerializeField] private Transform truckTransform;
 
     [Header("Steering Settings")]
-    [Tooltip("¿Qué eje local debe girar para simular la dirección del volante?")]
+    [Tooltip("Â¿QuÃ© eje local debe girar para simular la direcciÃ³n del volante?")]
     [SerializeField] private SteeringAxis steeringAxis = SteeringAxis.Z;
 
-    [Tooltip("Factor de división. Más alto = el volante gira menos en las curvas.")]
-    [SerializeField] private float rotationDivider = 2f;
+    [Tooltip("Factor de divisiÃ³n. MÃ¡s alto = el volante gira menos en las curvas.")]
+    [SerializeField] private float rotationDivider = 4f;
 
-    [Tooltip("Ángulo máximo que puede girar el volante a cada lado (grados).")]
+    [Tooltip("Ãngulo mÃ¡ximo que puede girar el volante a cada lado (grados).")]
     [SerializeField] private float maxSteeringAngle = 60f;
 
-    [Tooltip("Suavizado de retorno y movimiento.")]
-    [SerializeField] private float smoothSpeed = 5f;
+    [Tooltip("Velocidad a la que el volante sigue al target de giro.")]
+    [SerializeField] private float turnSpeed = 8f;
+
+    [Tooltip("Velocidad a la que el volante vuelve al centro.")]
+    [SerializeField] private float returnSpeed = 30f;
+
+    [Tooltip("Ãngulo mÃ­nimo de giro para considerar que el camiÃ³n estÃ¡ en curva.")]
+    [SerializeField] private float deadZone = 0.2f;
 
     private float currentWheelRotation = 0f;
-    private Vector3 lastTruckForward;
+    private float targetWheelRotation = 0f;
+    private Vector3 lastTruckDir;
     private Quaternion initialLocalRotation;
 
     private void Start()
     {
         if (truckTransform != null)
-        {
-            lastTruckForward = truckTransform.forward;
-        }
+            lastTruckDir = GetTruckForward();
 
-        // ¡ESTA ES LA CLAVE! Guardamos la inclinación exacta que le diste en el Inspector
         initialLocalRotation = transform.localRotation;
+    }
+
+    private Vector3 GetTruckForward()
+    {
+        return truckTransform.right;
     }
 
     private void LateUpdate()
     {
         if (truckTransform == null) return;
 
-        // 1. Calcular el Delta de giro del camión usando su propio eje UP
-        Vector3 currentForward = truckTransform.forward;
-        float deltaRotation = Vector3.SignedAngle(lastTruckForward, currentForward, truckTransform.up);
-        lastTruckForward = currentForward;
+        Vector3 currentDir = GetTruckForward();
+        float deltaRotation = Vector3.SignedAngle(lastTruckDir, currentDir, truckTransform.up);
+        lastTruckDir = currentDir;
 
-        // 2. Acumular el giro dividido
-        if (Mathf.Abs(deltaRotation) > 0.001f)
-        {
-            currentWheelRotation += (deltaRotation / rotationDivider);
-        }
-        else
-        {
-            // Retorno al centro suave si va recto
-            currentWheelRotation = Mathf.MoveTowards(currentWheelRotation, 0f, Time.deltaTime * smoothSpeed * 8f);
-        }
+        float absDelta = Mathf.Abs(deltaRotation);
 
-        // Limitar para proteger los brazos del IK
-        currentWheelRotation = Mathf.Clamp(currentWheelRotation, -maxSteeringAngle, maxSteeringAngle);
+        targetWheelRotation = Mathf.MoveTowards(targetWheelRotation, 0f, Time.deltaTime * returnSpeed * 0.5f);
 
-        // 3. Crear el Quaternion de giro SOLO para el eje seleccionado
+        if (absDelta > deadZone)
+            targetWheelRotation += (deltaRotation / rotationDivider);
+
+        targetWheelRotation = Mathf.Clamp(targetWheelRotation, -maxSteeringAngle, maxSteeringAngle);
+
+        float speed = absDelta > deadZone ? turnSpeed : returnSpeed;
+        currentWheelRotation = Mathf.MoveTowards(currentWheelRotation, targetWheelRotation, Time.deltaTime * speed);
+
         Vector3 steeringVector = Vector3.zero;
         switch (steeringAxis)
         {
@@ -67,12 +72,7 @@ public class SteeringWheelLimiterVec : MonoBehaviour
             case SteeringAxis.Y: steeringVector.y = currentWheelRotation; break;
             case SteeringAxis.Z: steeringVector.z = currentWheelRotation; break;
         }
-        Quaternion extraRotation = Quaternion.Euler(steeringVector);
 
-        // 4. COMBINAR: Mantener la inclinación inicial y multiplicarle el giro local
-        // Esto evita que los otros ejes se alteren o se reseteen a 0
-        Quaternion targetLocalRotation = initialLocalRotation * extraRotation;
-
-        transform.localRotation = Quaternion.Slerp(transform.localRotation, targetLocalRotation, Time.deltaTime * smoothSpeed);
+        transform.localRotation = initialLocalRotation * Quaternion.Euler(steeringVector);
     }
 }
