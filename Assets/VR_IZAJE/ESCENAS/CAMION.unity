@@ -3251,8 +3251,6 @@ MonoBehaviour:
   sonidoAlAvanzar: 1
   animationTimeline:
   - normalizedTime: 0
-    clip: {fileID: 7400000, guid: 712260ab53820bf4fbf348f498656857, type: 2}
-  - normalizedTime: 0.37830135
     clip: {fileID: 7400000, guid: d7ef867cd13e2d441a3c61b68beed7f2, type: 2}
   objectsToActivate: []
   objectsToDeactivate: []
@@ -15975,8 +15973,6 @@ MonoBehaviour:
   sonidoAlAvanzar: 1
   animationTimeline:
   - normalizedTime: 0
-    clip: {fileID: 7400000, guid: 712260ab53820bf4fbf348f498656857, type: 2}
-  - normalizedTime: 0.37830135
     clip: {fileID: 7400000, guid: d7ef867cd13e2d441a3c61b68beed7f2, type: 2}
   objectsToActivate: []
   objectsToDeactivate: []
@@ -19065,8 +19061,6 @@ MonoBehaviour:
   sonidoAlAvanzar: 1
   animationTimeline:
   - normalizedTime: 0
-    clip: {fileID: 7400000, guid: 712260ab53820bf4fbf348f498656857, type: 2}
-  - normalizedTime: 0.37830135
     clip: {fileID: 7400000, guid: d7ef867cd13e2d441a3c61b68beed7f2, type: 2}
   objectsToActivate: []
   objectsToDeactivate: []

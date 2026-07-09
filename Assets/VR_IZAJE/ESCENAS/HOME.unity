@@ -241,6 +241,10 @@ PrefabInstance:
         seguridad. Estoy aqu\xED para guiarte y ayudarte a entender c\xF3mo proteger
         lo m\xE1s valioso que tienes: tu vida y la de los dem\xE1s."
       objectReference: {fileID: 0}
+    - target: {fileID: 4093418612885731018, guid: b93c9a448e390f14badb49f7e1d46093, type: 3}
+      propertyPath: animationTimeline.Array.data[0].clip
+      value: 
+      objectReference: {fileID: 7400000, guid: dc34ea2b5163a084aa67d87d2c3a0302, type: 2}
     - target: {fileID: 4156378500282424139, guid: b93c9a448e390f14badb49f7e1d46093, type: 3}
       propertyPath: m_Name
       value: Sistema_robot
