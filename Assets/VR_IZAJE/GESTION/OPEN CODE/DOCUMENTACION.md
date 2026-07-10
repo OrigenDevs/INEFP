@@ -182,3 +182,55 @@ VRHandController.HandleGrab() detecta componentes en este orden:
 - Active Input Handling en Both: necesario para Input.GetKeyDown legacy
 - En URP de rendimiento, sombras suaves de alta calidad no son compatibles con Oculus
 - Luces adicionales (point/spot) requieren Per Pixel en URP Asset
+
+---
+## Reporte de cambios que causaron regresión en build Quest (láser rosa + inputs no funcionan)
+
+El build funcionaba correctamente hasta la incorporación de cambios recientes. A continuación se listan las diferencias detectadas entre el estado funcional y el actual:
+
+### 1. PreloadedAssets eliminados (ProjectSettings/ProjectSettings.asset)
+Se vació la lista `preloadedAssets`:
+- **Antes:** contenía `XRGeneralSettingsPerBuildTarget.asset` (Android Providers) y `OpenXRPackageSettings.asset`
+- **Ahora:** `preloadedAssets: []`
+- **Impacto:** El sistema XR se inicializaba antes de cargar la primera escena; sin precarga, puede no activarse correctamente en runtime en Android.
+
+### 2. OpenXRPackageSettings.asset modificado
+Unity reescribió la configuración al abrir el proyecto, introduciendo cambios automáticos:
+- Features renombradas de "Standalone" a "Android" (ej: `AndroidXRPerformanceMetrics Standalone → Android`)
+- Features añadidas/eliminadas de las listas de perfil Android y Standalone (ej: se agregaron `-7175732919195521793`, `-3530502343714857586`; se quitaron `1144022495435832864`, `-7861760786241378733`)
+- Extension strings de AR Anchor actualizadas: `XR_ANDROID_trackables → XR_ANDROID_trackables XR_ANDROID_device_anchor_persistence`
+- **Impacto:** Pueden faltar features necesarias para inputs o render en Quest.
+
+### 3. Composición de capas (CompositionLayers) — Alpha Processing deshabilitado
+El URP Asset tiene CompositionLayers sin Alpha Processing. El Project Validation advierte:
+- *"Enable Alpha Processing on Universal Render Pipeline Asset under Post Processing to enable composition layer support."*
+- **Impacto:** Materiales transparentes (como el láser del XR Interaction Toolkit) se renderizan en rosa en build.
+
+### 4. Depth Submission Mode en None
+En OpenXR settings (Android), `Depth Submission Mode` está en `None` en lugar de `Depth 16` o `Depth 24`.
+- **Impacto:** Puede causar problemas de renderizado en Quest.
+
+### 5. Múltiples Interaction Profiles habilitados
+Están habilitados simultáneamente:
+- `Meta Quest Touch Plus Controller Profile`
+- `Oculus Touch Controller Profile`
+Unity advierte: *"Only enable interaction profiles that you actually test, to ensure their input bindings are complete."*
+- **Impacto:** Posibles conflictos de bindings de input entre perfiles.
+
+### 6. Screen Space Ambient Occlusion (SSAO) activado
+El URP Asset tiene SSAO habilitado. Project Validation advierte:
+- *"Using the Screen Space Ambient Occlusion render feature results in significant performance overhead when the application is running natively on device."*
+- **Impacto:** Rendimiento degradado, posible causa indirecta de problemas de render.
+
+### 7. Offscreen Rendering Only (Vulkan) activado
+En OpenXR settings, `Offscreen Rendering Only (Vulkan)` está marcado.
+- **Impacto:** Puede afectar cómo se renderizan los overlays y la interfaz.
+
+### Correcciones recomendadas (por prioridad)
+1. Habilitar **Alpha Processing** en el URP Asset (Post Processing)
+2. Reducir a un solo **Interaction Profile** (el que coincida con el dispositivo target)
+3. Cambiar **Depth Submission Mode** a `Depth 16`
+4. Desactivar **SSAO** del URP Asset (o crear variante sin SSAO para Android)
+5. Restaurar **preloadedAssets** en ProjectSettings
+6. Verificar/restaurar el archivo **OpenXRPackageSettings.asset** desde el commit funcional (`cfff501`)
+7. Revisar si **Offscreen Rendering Only (Vulkan)** es necesario
