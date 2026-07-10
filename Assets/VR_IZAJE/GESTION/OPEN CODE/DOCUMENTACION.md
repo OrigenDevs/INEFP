@@ -1,216 +1,184 @@
-# VR IZAJE — Documentación del Proyecto
+# VR INEFP — Documentación del Proyecto
 
-Aplicación VR para visualización interactiva de componentes de vehículos de construcción.
-Experiencia guiada por robot asistente con selección, rotación y exploración de piezas.
+Proyecto Unity con múltiples experiencias VR de formación.
+Actualmente en transición del módulo de **Izaje** al módulo de **Fatiga y Somnolencia en Carreteras**.
 
-**Motor:** Unity 2022.3+ · **Target:** Oculus Quest / PC VR · **Pipeline:** Built-in
-**Paquetes:** XR Interaction Toolkit 3.x, XR Core Utils, TextMeshPro, DOTween
+**Motor:** Unity 2022.3+ · **Target:** Meta Quest / PC VR · **Pipeline:** URP
+**Paquetes:** XR Interaction Toolkit 3.x, XR Core Utils, TextMeshPro, DOTween, Splines
 
 ---
 
 ## Estructura del proyecto
 
 ```
-Assets/VR_IZAJE/
-├── CODIGO/
-│   ├── Animacion/          MirarCamara, NPCPatrol, OscilacionAutomatica,
-│   │                         OscilacionEmisivo, OscilacionEscala,
-│   │                         OscilacionOpacidad, RotacionAutomatica
-│   ├── Interacciones/      Button3D, CambioEscena, CambioMaterialHover,
-│   │                         CuentaRegresiva, DestructorPorTrigger,
-│   │                         RotacionArrastre, SimpleGrab, SistemaAutopartes,
-│   │                         SistemaDeMatch, SwitchBoton
-│   ├── Otros/              FechaTexto, SistemaAnimacionCorto, TransicionVr
-│   ├── Robot/              DialogData, DialogPlayer, LipSyncController
-│   ├── Shaders/            AutodeskInteractiveMasked_Custom_BACKUP.shadergraph
-│   ├── Sistema_pasos/      CondAgarreTiempo, CondAnimacion, CondBoton,
-│   │                         CondSeleccion, CondTiempo, CondTrigger
-│   └── VR/                 DesktopInputController, VRHandController
-├── ESCENAS/
-│   ├── HOME.unity
-│   ├── LOBBI.unity
-│   ├── TRABAJO DE CAMPO IZAJE.unity
-│   └── VEHICULOS DE CONSTRUCCION.unity
-├── 3D/                     Modelos, animaciones, materiales, HDRI
-├── PREFABS/                Prefabs estructurales, medianos, decorativos, interactivos
-├── SONIDO/                 Archivos de audio
-└── GESTION/                Documentación, reportes, notas
-    ├── DAVID IZAJE/        Notas de contenido, guías, progreso
-    ├── JUAN IZAJE/         Espacio de trabajo de Juan
-    └── OPEN CODE/          Documentación, índice, reportes
+Assets/
+├── VR_IZAJE/                  ← Módulo anterior (izaje). Se conserva por código compartido.
+│   ├── CODIGO/                ← Scripts reutilizables
+│   ├── ESCENAS/               ← Escenas del módulo de izaje
+│   ├── 3D/                    ← Modelos, texturas, materiales de izaje
+│   ├── PREFABS/
+│   └── GESTION/OPEN CODE/     ← Documentación (este archivo)
+├── VR_SOMNOLENCIA/            ← NUEVO MÓDULO: fatiga y somnolencia en carreteras
+│   (pendiente de crear)
+├── Settings/                  ← Configuración URP, calidad, iluminación
+├── XR/                        ← Configuración OpenXR, loaders
+├── XRI/                       ← Ajustes XR Interaction Toolkit
+└── Samples/                   ← Samples de paquetes (XRI, Hands, etc.)
 ```
 
 ---
 
-## Scripts del sistema
+## Configuración del proyecto
+
+| Parámetro | Valor |
+|-----------|-------|
+| Render Pipeline | URP (Performance y Quality assets) |
+| Active Input Handling | Both (necesario para Input.GetKeyDown legacy) |
+| HDR | Desactivado en Performance URP Config |
+| MSAA | 4x |
+| Luces adicionales | Per Pixel (activado) |
+| Sombras suaves | Desactivadas en calidad baja (Quest) |
+| Post-processing | Parcialmente activo (SSAO, Color Adjustments, Bloom en ajuste) |
+
+### Advertencias conocidas
+- "Active Input Handling is set to Both" en Android — ignorar, necesario por scripts legacy
+- "Real-time indirect bounce shadowing only supported for directional light" — solucionado con Additional Lights en Per Pixel
+
+---
+
+## Scripts compartidos (reutilizables en VR_SOMNOLENCIA)
 
 ### Animacion
 
 | Script | Ruta | Función |
 |--------|------|---------|
-| MirarCamara | `CODIGO/Animacion/MirarCamara.cs` | Hace que el objeto mire siempre hacia la cámara principal (billboard) |
-| NPCPatrol | `CODIGO/Animacion/NPCPatrol.cs` | Patrullaje de NPC entre waypoints |
-| OscilacionAutomatica | `CODIGO/Animacion/OscilacionAutomatica.cs` | Oscilación suave por ejes independientes (seno), con reset público |
-| OscilacionEmisivo | `CODIGO/Animacion/OscilacionEmisivo.cs` | Oscila intensidad emisiva con color |
-| OscilacionEscala | `CODIGO/Animacion/OscilacionEscala.cs` | Oscila la escala del objeto |
-| OscilacionOpacidad | `CODIGO/Animacion/OscilacionOpacidad.cs` | Oscila transparencia de material |
-| RotacionAutomatica | `CODIGO/Animacion/RotacionAutomatica.cs` | Rotación continua automática |
+| MirarCamara | `VR_IZAJE/CODIGO/Animacion/MirarCamara.cs` | Billboard: objeto mira siempre a cámara |
+| NPCPatrol | `VR_IZAJE/CODIGO/Animacion/NPCPatrol.cs` | Patrullaje entre waypoints |
+| OscilacionAutomatica | `VR_IZAJE/CODIGO/Animacion/OscilacionAutomatica.cs` | Oscilación por ejes (seno), con reset |
+| OscilacionEmisivo | `VR_IZAJE/CODIGO/Animacion/OscilacionEmisivo.cs` | Oscila intensidad emisiva |
+| OscilacionEscala | `VR_IZAJE/CODIGO/Animacion/OscilacionEscala.cs` | Oscila escala del objeto |
+| OscilacionOpacidad | `VR_IZAJE/CODIGO/Animacion/OscilacionOpacidad.cs` | Oscila transparencia |
+| RotacionAutomatica | `VR_IZAJE/CODIGO/Animacion/RotacionAutomatica.cs` | Rotación continua |
 
-### Interacciones (sistema modular)
+### Interacciones (sistema modular VR)
 
 | Script | Ruta | Función |
 |--------|------|---------|
-| Button3D | `CODIGO/Interacciones/Button3D.cs` | Botón 3D con hover/press/release y audio externo |
-| CambioEscena | `CODIGO/Interacciones/CambioEscena.cs` | Cambia de escena por nombre |
-| CambioMaterialHover | `CODIGO/Interacciones/CambioMaterialHover.cs` | Feedback visual: cambia material al hacer hover con el láser |
-| CuentaRegresiva | `CODIGO/Interacciones/CuentaRegresiva.cs` | Desactiva el objeto al terminar cuenta regresiva |
-| DestructorPorTrigger | `CODIGO/Interacciones/DestructorPorTrigger.cs` | Destruye objetos al entrar en trigger, reproduce sonido, activa objetos |
-| RotacionArrastre | `CODIGO/Interacciones/RotacionArrastre.cs` | Rotación por arrastre con láser VR (trackball), sensibilidad configurable |
-| SimpleGrab | `CODIGO/Interacciones/SimpleGrab.cs` | Agarre simplificado con retorno a posición base. Expone eventos onGrab/onRelease |
-| SistemaAutopartes | `CODIGO/Interacciones/SistemaAutopartes.cs` | Selección de pieza con cambio de padre, transición suave y toggle de objetos |
-| SistemaDeMatch | `CODIGO/Interacciones/SistemaDeMatch.cs` | Al entrar un objeto, desactiva/destruye ese objeto y activa su pareja. Al completar todos los pares, avanza el diálogo |
-| SwitchBoton | `CODIGO/Interacciones/SwitchBoton.cs` | Toggle con listas de objetos modo interior/exterior |
+| Button3D | `VR_IZAJE/CODIGO/Interacciones/Button3D.cs` | Botón 3D con hover/press/release y audio |
+| CambioEscena | `VR_IZAJE/CODIGO/Interacciones/CambioEscena.cs` | Cambia de escena por nombre |
+| CambioMaterialHover | `VR_IZAJE/CODIGO/Interacciones/CambioMaterialHover.cs` | Feedback hover: cambia material al apuntar |
+| CuentaRegresiva | `VR_IZAJE/CODIGO/Interacciones/CuentaRegresiva.cs` | Desactiva objeto al terminar cuenta |
+| DestructorPorTrigger | `VR_IZAJE/CODIGO/Interacciones/DestructorPorTrigger.cs` | Destruye objetos en trigger, reproduce sonido |
+| RotacionArrastre | `VR_IZAJE/CODIGO/Interacciones/RotacionArrastre.cs` | Rotación trackball con láser VR |
+| SimpleGrab | `VR_IZAJE/CODIGO/Interacciones/SimpleGrab.cs` | Agarre con retorno a posición base, eventos onGrab/onRelease |
+| SistemaAutopartes | `VR_IZAJE/CODIGO/Interacciones/SistemaAutopartes.cs` | Selección de pieza con cambio de padre y toggle |
+| SistemaDeMatch | `VR_IZAJE/CODIGO/Interacciones/SistemaDeMatch.cs` | Empareja objetos, activa pareja al coincidir |
+| SwitchBoton | `VR_IZAJE/CODIGO/Interacciones/SwitchBoton.cs` | Toggle con listas interior/exterior |
 
 ### Sistema de pasos y diálogos
 
 | Script | Ruta | Función |
 |--------|------|---------|
-| DialogData | `CODIGO/Robot/DialogData.cs` | Datos del diálogo: texto, audio, animaciones, listas de objetos |
-| DialogPlayer | `CODIGO/Robot/DialogPlayer.cs` | Reproductor de diálogos con timeline, lip sync, auto-avance |
-| LipSyncController | `CODIGO/Robot/LipSyncController.cs` | Sincronización de labios con espectro de audio, populate via AnimationClip |
-| CondAgarreTiempo | `CODIGO/Sistema_pasos/CondAgarreTiempo.cs` | Avanza al mantener agarrado un objeto X tiempo, con barra de progreso y sonido loop |
-| CondAnimacion | `CODIGO/Sistema_pasos/CondAnimacion.cs` | Asigna controller al animator, espera que termine la animación y llama a TransicionVr |
-| CondBoton | `CODIGO/Sistema_pasos/CondBoton.cs` | Avanza al presionar un botón |
-| CondSeleccion | `CODIGO/Sistema_pasos/CondSeleccion.cs` | Avanza al seleccionar N objetos distintos con SimpleGrab |
-| CondTiempo | `CODIGO/Sistema_pasos/CondTiempo.cs` | Avanza al siguiente diálogo tras un tiempo |
-| CondTrigger | `CODIGO/Sistema_pasos/CondTrigger.cs` | Avanza al entrar N objetos mínimos en un trigger |
+| DialogData | `VR_IZAJE/CODIGO/Robot/DialogData.cs` | Datos: texto, audio, animaciones, listas de objetos |
+| DialogPlayer | `VR_IZAJE/CODIGO/Robot/DialogPlayer.cs` | Reproductor con timeline, lip sync, auto-avance |
+| LipSyncController | `VR_IZAJE/CODIGO/Robot/LipSyncController.cs` | Sincronización de labios con espectro de audio |
+| CondAgarreTiempo | `VR_IZAJE/CODIGO/Sistema_pasos/CondAgarreTiempo.cs` | Avanza al mantener agarrado X tiempo, barra de progreso |
+| CondAnimacion | `VR_IZAJE/CODIGO/Sistema_pasos/CondAnimacion.cs` | Espera animación, luego llama a TransicionVr |
+| CondBoton | `VR_IZAJE/CODIGO/Sistema_pasos/CondBoton.cs` | Avanza al presionar botón |
+| CondSeleccion | `VR_IZAJE/CODIGO/Sistema_pasos/CondSeleccion.cs` | Avanza al seleccionar N objetos con SimpleGrab |
+| CondTiempo | `VR_IZAJE/CODIGO/Sistema_pasos/CondTiempo.cs` | Avanza tras un tiempo |
+| CondTrigger | `VR_IZAJE/CODIGO/Sistema_pasos/CondTrigger.cs` | Avanza al entrar N objetos en trigger |
 
 ### VR
 
 | Script | Ruta | Función |
 |--------|------|---------|
-| VRHandController | `CODIGO/VR/VRHandController.cs` | Láser con mirilla, detecta SimpleGrab, Button3D, RotacionArrastre, CambioMaterialHover, SistemaAutopartes |
-| DesktopInputController | `CODIGO/VR/DesktopInputController.cs` | Modo escritorio (tecla P) |
+| VRHandController | `VR_IZAJE/CODIGO/VR/VRHandController.cs` | Láser con mirilla, detecta SimpleGrab/Button3D/RotacionArrastre/etc. |
+| DesktopInputController | `VR_IZAJE/CODIGO/VR/DesktopInputController.cs` | Modo escritorio (tecla P), rotación de cámara con flechas |
 
 ### Otros
 
 | Script | Ruta | Función |
 |--------|------|---------|
-| FechaTexto | `CODIGO/Otros/FechaTexto.cs` | Muestra la fecha actual en un TextMeshPro |
-| SistemaAnimacionCorto | `CODIGO/Otros/SistemaAnimacionCorto.cs` | Al entrar un trigger: dispara trigger "Accidente" en Animator del personaje, activa/desactiva listas de objetos |
-| TransicionVr | `CODIGO/Otros/TransicionVr.cs` | Fundido a negro con DOTween, teletransporta objeto a destino, reproduce audio, se auto-desactiva al terminar |
+| FechaTexto | `VR_IZAJE/CODIGO/Otros/FechaTexto.cs` | Muestra fecha actual en TextMeshPro |
+| SistemaAnimacionCorto | `VR_IZAJE/CODIGO/Otros/SistemaAnimacionCorto.cs` | Trigger: dispara animación "Accidente", activa/desactiva objetos |
+| TransicionVr | `VR_IZAJE/CODIGO/Otros/TransicionVr.cs` | Fundido a negro DOTween, teletransporta objeto, auto-desactiva |
 
 ---
 
-## Flujo de selección VR (prioridad de detección)
+## Flujo de selección VR (VRHandController)
 
 VRHandController.HandleGrab() detecta componentes en este orden:
 1. **SimpleGrab** → agarre del objeto
 2. **RotacionArrastre** → rotación por arrastre
-3. **Button3D** → botón clickeable (hover/press/release)
+3. **Button3D** → botón clickeable
 4. **SistemaAutopartes** → toggle de modo al soltar gatillo
 
-**CambioMaterialHover** se detecta de forma independiente (funciona junto con cualquier componente).
+**CambioMaterialHover** se detecta de forma independiente.
 
 ---
 
 ## Flujo de diálogos
 
 1. DialogPlayer.Start() activa `dialogList[0]`
-2. Al activarse, DialogData.OnEnable() llama a DialogPlayer.Play()
-3. Play() reproduce audio, texto sincronizado, animaciones, timeline
+2. DialogData.OnEnable() llama a DialogPlayer.Play()
+3. Play() reproduce audio, texto, animaciones, timeline
 4. Al terminar: procesa objetosToActivateOnEnd/DeactivateOnEnd
-5. Si autoAvanzar=true, llama a Avanzar() → desactiva actual, activa siguiente
-6. CondTiempo / CondBoton / etc. llaman a Avanzar() para avanzar externamente
-
-### LipSyncController
-- Se asigna al robot mediante `DialogPlayer.lipSync` y `DialogPlayer.mouthRenderer`
-- PopulateSpritesFromClip() extrae sprites de un AnimationClip o de la subcarpeta `BOCA LOOP`
-- En Update: analiza espectro de audio, cicla sprites de boca si hay volumen > threshold
-
-### CondAgarreTiempo
-- Se suscribe a SimpleGrab.onGrab/onRelease
-- Mientras se mantiene agarrado, acumula tiempo y actualiza escala de una barra
-- Al completar, llama a DialogPlayer.Avanzar()
-- Reproduce AudioSource en loop durante el agarre
-
-### CondAnimacion
-- En OnEnable: asigna RuntimeAnimatorController al Animator objetivo
-- Espera que termine el clip actual
-- Llama a TransicionVr.ParpadearConTransporte()
+5. Si autoAvanzar=true, llama a Avanzar() → siguiente diálogo
+6. CondTiempo / CondBoton / etc. llaman a Avanzar() externamente
 
 ---
 
-## Flujo de TransicionVr
+## Archivos críticos de configuración
 
-1. El GameObject se activa (OnEnable)
-2. `ParpadearConTransporte()` inicia secuencia DOTween:
-   - Fundido a negro
-   - Teletransporta `objetoATransportar` a `destino` (posición + rotación)
-   - Reproduce `audioTransicion`
-   - Espera
-   - Fundido desde negro
-3. Al completar: `gameObject.SetActive(false)` — queda listo para reutilizar
+- `Assets/Settings/Project Configuration/Performance URP Config.asset` — URP de rendimiento (Quest)
+- `Assets/Settings/Project Configuration/Quality URP Config.asset` — URP de calidad (PC)
+- `Assets/Settings/Project Configuration/New Lighting Settings.lighting` — Config de iluminación
+- `Assets/Settings/DefaultVolumeProfile.asset` — Perfil de post-processing global
+- `Assets/link.xml` — Evita stripping de DOTween, XR, URP en build Android
 
 ---
 
-## Flujo de SistemaAnimacionCorto
+## Atajos de teclado (modo pruebas)
 
-1. Objeto con trigger collider + script
-2. Cualquier collider entra al trigger → OnTriggerEnter:
-   - `animatorPersonaje.SetTrigger("Accidente")`
-   - Desactiva todos los objetos en `objetosADesactivar`
-   - Activa todos los objetos en `objetosAActivar`
-
----
-
-## Estado del proyecto (01 Julio 2026)
-
-### Completado
-- [x] Interacción base VR (láser, agarre, rotación, botones)
-- [x] Sistema de diálogos con robot guía + lip sync
-- [x] Feedback visual hover con cambio de material
-- [x] SistemaAutopartes: selección de piezas con transición y toggle
-- [x] RotacionArrastre: rotación tipo trackball con láser
-- [x] CambioMaterialHover: cambio de material en hijos recursivo
-- [x] DestructorPorTrigger + CuentaRegresiva + SistemaDeMatch
-- [x] TransicionVr: fundido a negro con teletransporte y sonido
-- [x] SistemaAnimacionCorto: trigger con animación de accidente y activación/desactivación de objetos
-- [x] CondAgarreTiempo: agarre prolongado con barra de progreso
-- [x] CondAnimacion: reproducción de animación antes de transición
-- [x] Documentación actualizada con todos los scripts
-
-### Pendiente — Vehículos de Construcción
-- [ ] Modelado 3D del camión y componentes (Fase 1)
-- [ ] Configurar SistemaAutopartes en cada pieza
-- [ ] Grabar audios del robot para cada componente
-- [ ] Escribir textos de diálogo por pieza
-- [ ] Pruebas de flujo completo en VR
-- [ ] Build para PC VR / Quest
-
----
-
-## Para comenzar
-
-1. Abrir proyecto en Unity 2022.3+
-2. Ir a `ESCENAS/VEHICULOS DE CONSTRUCCION.unity`
-3. Presionar P durante Play para modo escritorio
-4. Leer scripts en `CODIGO/Interacciones/` y `CODIGO/Robot/`
-5. Agregar CambioMaterialHover a objetos para feedback visual hover
-6. Configurar diálogos en DialogPlayer.dialogList
-
-### Atajos de teclado (modo pruebas)
 - **P** durante Play → Alterna VR / Escritorio
 - **Flechas** → Rotan cámara (modo escritorio)
 - **Mouse + click** → Mano/láser (modo escritorio)
 - **T** → Prueba TransicionVr.ParpadearConTransporte()
-- **E** durante un diálogo → Salta el audio actual y ejecuta las acciones de finalización
+- **E** durante diálogo → Salta audio y ejecuta acciones finales
 
-### Notas técnicas
-- SistemaAutopartes requiere: parteSeleccionada, padreInicial, padreObservacion
-- RotacionArrastre requiere: SphereCollider en el objeto
-- CambioMaterialHover busca MeshRenderers en Awake (jerarquía estática)
-- VRHandController usa `laserMaxDistance` para el alcance del láser
-- TransicionVr usa DOTween; requiere tener `objetoATransportar`, `destino` y `audioTransicion` asignados
-- CondAgarreTiempo requiere SimpleGrab en el mismo GameObject
-- CondAnimacion requiere que TransicionVr esté presente en la escena
+---
+
+## Estado del proyecto (07 Julio 2026)
+
+### Completado (módulo Izaje)
+- [x] Interacción base VR (láser, agarre, rotación, botones)
+- [x] Sistema de diálogos con robot guía + lip sync
+- [x] Feedback visual hover con cambio de material
+- [x] SistemaAutopartes: selección de piezas
+- [x] RotacionArrastre: rotación trackball
+- [x] TransicionVr: fundido a negro con teletransporte
+- [x] SistemaAnimacionCorto: trigger de accidente
+- [x] CondAgarreTiempo: agarre prolongado con barra
+- [x] Build funcional en Meta Quest 3
+- [x] Post-processing funcionando en Quest (parcial)
+- [x] Repositorio GitHub: https://github.com/OrigenDevs/INEFP
+
+### Pendiente (nuevo módulo: Fatiga y Somnolencia en Carreteras)
+- (pendiente de definir contenido y estructura)
+
+---
+
+## Cómo empezar con el nuevo módulo
+
+1. Crear carpeta `Assets/VR_SOMNOLENCIA/` con estructura similar a VR_IZAJE
+2. Reutilizar scripts de `Assets/VR_IZAJE/CODIGO/` según sea necesario
+3. Para modificar scripts compartidos, tener cuidado de no romper el módulo de izaje
+4. Usar el URP Asset de rendimiento para builds Quest
+5. Configurar nuevas escenas en `File > Build Settings`
+
+### Notas técnicas importantes
+- DOTween requiere `DOTween.Init()` antes de usar (ya incluido en TransicionVr.Awake())
+- Active Input Handling en Both: necesario para Input.GetKeyDown legacy
+- En URP de rendimiento, sombras suaves de alta calidad no son compatibles con Oculus
+- Luces adicionales (point/spot) requieren Per Pixel en URP Asset
