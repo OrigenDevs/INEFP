@@ -1,6 +1,9 @@
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.XR.Interaction.Toolkit;
+using UnityEngine.XR.Interaction.Toolkit.Interactables;
 
+[RequireComponent(typeof(XRGrabInteractable))]
 public class SimpleGrab : MonoBehaviour
 {
     public UnityEvent onGrab;
@@ -24,6 +27,7 @@ public class SimpleGrab : MonoBehaviour
     private bool movingToHand = false;
     private bool movingToOriginal = false;
     private AudioSource audioSource;
+    private XRGrabInteractable grabInteractable;
 
     void Start()
     {
@@ -38,6 +42,26 @@ public class SimpleGrab : MonoBehaviour
         }
         audioSource = gameObject.AddComponent<AudioSource>();
         audioSource.playOnAwake = false;
+
+        grabInteractable = GetComponent<XRGrabInteractable>();
+        grabInteractable.selectEntered.AddListener(OnSelectEntered);
+        grabInteractable.selectExited.AddListener(OnSelectExited);
+    }
+
+    void OnSelectEntered(SelectEnterEventArgs args)
+    {
+        var interactor = args.interactorObject;
+        if (interactor != null)
+        {
+            grabInteractable.trackPosition = false;
+            grabInteractable.trackRotation = false;
+            Grab(interactor.transform);
+        }
+    }
+
+    void OnSelectExited(SelectExitEventArgs args)
+    {
+        Release();
     }
 
     public void Grab(Transform target)

@@ -65,6 +65,7 @@ namespace Unity.VRTemplate
                 m_ButtonPlayOrPause.SetActive(false);
         }
 
+
         void OnEnable()
         {
             if (m_VideoPlayer != null)
