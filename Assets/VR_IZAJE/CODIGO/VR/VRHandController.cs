@@ -75,7 +75,7 @@ public class VRHandController : MonoBehaviour
         laser.positionCount = 2;
         laser.startWidth = laserWidth;
         laser.endWidth = laserWidth * 0.5f;
-        laserMaterial = new Material(Shader.Find("Unlit/Color"));
+        laserMaterial = CrearMaterialColor();
         laser.material = laserMaterial;
         laser.enabled = true;
 
@@ -84,11 +84,11 @@ public class VRHandController : MonoBehaviour
             PrimitiveType type = reticleUseSphere ? PrimitiveType.Sphere : PrimitiveType.Quad;
             GameObject rt = GameObject.CreatePrimitive(type);
             rt.name = "Reticle (" + node + ")";
-            DestroyImmediate(rt.GetComponent<Collider>());
+            Destroy(rt.GetComponent<Collider>());
             rt.transform.localScale = Vector3.one * reticleSize;
             reticleInstance = rt.transform;
             reticleRenderer = rt.GetComponent<Renderer>();
-            reticleRenderer.material = new Material(Shader.Find("Unlit/Color"));
+            reticleRenderer.material = CrearMaterialColor();
         }
         else
         {
@@ -234,6 +234,8 @@ public class VRHandController : MonoBehaviour
         laser.startColor = col;
         laser.endColor = col;
         laserMaterial.color = col;
+        if (laserMaterial.HasProperty("_BaseColor"))
+            laserMaterial.SetColor("_BaseColor", col);
 
         if (reticleInstance != null)
         {
@@ -248,6 +250,8 @@ public class VRHandController : MonoBehaviour
                 Color rc = col;
                 rc.a = 1f;
                 reticleRenderer.material.color = rc;
+                if (reticleRenderer.material.HasProperty("_BaseColor"))
+                    reticleRenderer.material.SetColor("_BaseColor", rc);
             }
         }
     }
@@ -365,6 +369,16 @@ public class VRHandController : MonoBehaviour
             color = defaultColor;
 
         handRenderer.material.color = color;
+    }
+
+    Material CrearMaterialColor()
+    {
+        Shader shader = Shader.Find("Universal Render Pipeline/Unlit");
+        if (shader == null)
+            shader = Shader.Find("Unlit/Color");
+        if (shader == null)
+            shader = Shader.Find("Standard");
+        return new Material(shader);
     }
 
     void OnDestroy()
