@@ -49,8 +49,10 @@ public class TransicionVr : MonoBehaviour
     {
         GameObject canvasObj = new GameObject("CanvasTransicion");
         Canvas canvas = canvasObj.AddComponent<Canvas>();
-        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        canvas.renderMode = RenderMode.ScreenSpaceCamera;
+        canvas.worldCamera = Camera.main;
         canvas.sortingOrder = 32767;
+        canvas.planeDistance = 0.1f;
         canvasObj.AddComponent<CanvasScaler>();
         canvasObj.AddComponent<GraphicRaycaster>();
         canvasObj.transform.SetParent(transform);
