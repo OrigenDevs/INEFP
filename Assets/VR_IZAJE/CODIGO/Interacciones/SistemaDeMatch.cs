@@ -51,8 +51,12 @@ public class SistemaDeMatch : MonoBehaviour
         foreach (var c in completados)
             if (!c) return;
 
-        enabled = false;
+        Debug.Log("SistemaDeMatch: Todos completados, avanzando dialogo");
         if (dialogPlayer != null)
             dialogPlayer.Avanzar();
+        else
+            Debug.LogWarning("SistemaDeMatch: dialogPlayer no asignado");
+
+        enabled = false;
     }
 }

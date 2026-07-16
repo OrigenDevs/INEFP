@@ -20,6 +20,18 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/VR_IZAJE/ESCENAS/Refactorizado/CAMION.unity
     guid: 473f66ed15f3b1f409436f58a80cfbe2
+  - enabled: 1
+    path: Assets/VR_IZAJE/ESCENAS/Refactorizado/HOME 1.unity
+    guid: 2ed05c633c3de50469998348d50ee54e
+  - enabled: 1
+    path: Assets/VR_IZAJE/ESCENAS/Refactorizado/LOBBI 1.unity
+    guid: 93e7b7264275dd1458eeda115ad3bccb
+  - enabled: 1
+    path: Assets/VR_IZAJE/ESCENAS/Refactorizado/TRABAJO DE CAMPO IZAJE 1.unity
+    guid: 4c918bb385b18e84bac89ebe45a184e8
+  - enabled: 1
+    path: Assets/VR_IZAJE/ESCENAS/Refactorizado/VEHICULOS DE CONSTRUCCION 1.unity
+    guid: 2ed68bed0dd40c2498c4d7123c278187
   m_configObjects:
     Unity.XR.Oculus.Settings: {fileID: 11400000, guid: 111d1c18f3f88d84ab352f3c978c959b, type: 2}
     Unity.XR.WindowsMR.Settings: {fileID: 11400000, guid: dc5a169419fa04987b057f65238cf3ba, type: 2}

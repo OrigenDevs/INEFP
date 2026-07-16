@@ -195,7 +195,7 @@ public class VRHandController : MonoBehaviour
                 reticleInstance.gameObject.SetActive(false);
             if (grabbedObject != null)
             {
-                grabbedObject.Release();
+               // grabbedObject.Release();
                 grabbedObject = null;
             }
             if (rotatingObject != null)
@@ -304,9 +304,9 @@ public class VRHandController : MonoBehaviour
             if (sg != null && grabAttachPoint != null)
             {
                 if (grabbedObject != null && grabbedObject != sg)
-                    grabbedObject.Release();
+                   // grabbedObject.Release();
                 grabbedObject = sg;
-                grabbedObject.Grab(grabAttachPoint);
+               // grabbedObject.Grab(grabAttachPoint);
             }
             else if (ra != null)
             {
@@ -324,7 +324,7 @@ public class VRHandController : MonoBehaviour
         {
             if (grabbedObject != null)
             {
-                grabbedObject.Release();
+                //grabbedObject.Release();
                 grabbedObject = null;
             }
             if (rotatingObject != null)
@@ -386,7 +386,7 @@ public class VRHandController : MonoBehaviour
         InputDevices.deviceConnected -= OnDeviceConnected;
         if (grabbedObject != null)
         {
-            grabbedObject.Release();
+           // grabbedObject.Release();
             grabbedObject = null;
         }
         if (rotatingObject != null)
