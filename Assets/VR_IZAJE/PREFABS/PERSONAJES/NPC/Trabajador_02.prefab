@@ -64,15 +64,31 @@ PrefabInstance:
       propertyPath: m_ConstrainProportionsScale
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: -7823293702887809713, guid: a0d73354d1f26844a8d02edfe20b9027, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 620799833dff04b44bac566ae991f051, type: 2}
     - target: {fileID: -6138923895777843317, guid: a0d73354d1f26844a8d02edfe20b9027, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: bb903889e348a0f40aefe34d9060c992, type: 2}
+    - target: {fileID: -5738929356375114689, guid: a0d73354d1f26844a8d02edfe20b9027, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -5738929356375114689, guid: a0d73354d1f26844a8d02edfe20b9027, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 620799833dff04b44bac566ae991f051, type: 2}
     - target: {fileID: 919132149155446097, guid: a0d73354d1f26844a8d02edfe20b9027, type: 3}
       propertyPath: m_Name
       value: Trabajador_02
       objectReference: {fileID: 0}
     - target: {fileID: 1630794972795428178, guid: a0d73354d1f26844a8d02edfe20b9027, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: ded4de7d31e39f74a8c5d6f1bf315025, type: 2}
+    - target: {fileID: 2321523695958950486, guid: a0d73354d1f26844a8d02edfe20b9027, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: ded4de7d31e39f74a8c5d6f1bf315025, type: 2}

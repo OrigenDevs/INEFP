@@ -62,12 +62,6 @@ public class DialogPlayer : MonoBehaviour
         playRoutine = StartCoroutine(PlayRoutine(data));
     }
 
-    void Update()
-    {
-        if (Input.GetKeyDown(KeyCode.E))
-            Saltar();
-    }
-
     public void Stop()
     {
         if (playRoutine != null)

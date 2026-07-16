@@ -8,6 +8,7 @@ public class SimpleGrab : MonoBehaviour
 {
     public UnityEvent onGrab;
     public UnityEvent onRelease;
+    public bool grabConLerp;
     public float grabSpeed = 8f;
     public float releaseSpeed = 4f;
     public bool faceCamera = true;
@@ -51,20 +52,35 @@ public class SimpleGrab : MonoBehaviour
     void OnSelectEntered(SelectEnterEventArgs args)
     {
         var interactor = args.interactorObject;
-        if (interactor != null)
+        if (interactor == null) return;
+
+        if (grabConLerp)
         {
             grabInteractable.trackPosition = false;
             grabInteractable.trackRotation = false;
-            Grab(interactor.transform);
+            Agarrar(interactor.transform);
+        }
+        else
+        {
+            isGrabbed = true;
+            if (cambiarPosicionBase && nuevaPosicionBase != null)
+            {
+                originalPosition = nuevaPosicionBase.position;
+                originalRotation = nuevaPosicionBase.rotation;
+                originalParent = nuevaPosicionBase.parent;
+            }
+            if (grabSound != null)
+                audioSource.PlayOneShot(grabSound);
+            onGrab.Invoke();
         }
     }
 
     void OnSelectExited(SelectExitEventArgs args)
     {
-        Release();
+        Soltar();
     }
 
-    public void Grab(Transform target)
+    public void Agarrar(Transform target)
     {
         if (target == null || isGrabbed) return;
         isGrabbed = true;
@@ -88,25 +104,68 @@ public class SimpleGrab : MonoBehaviour
         onGrab.Invoke();
     }
 
-    public void Release()
+    public void Soltar()
     {
-        if (!isGrabbed) return;
-        isGrabbed = false;
-        movingToOriginal = true;
-        movingToHand = false;
-        transform.SetParent(null);
-        if (rb != null)
+        if (!isGrabbed && !movingToOriginal) return;
+
+        if (grabConLerp && isGrabbed)
         {
-            rb.isKinematic = true;
-            rb.useGravity = false;
+            isGrabbed = false;
+            movingToHand = false;
+            movingToOriginal = true;
+            transform.SetParent(null);
+            if (rb != null)
+            {
+                rb.isKinematic = true;
+                rb.useGravity = false;
+            }
+            if (releaseSound != null)
+                audioSource.PlayOneShot(releaseSound);
+            onRelease.Invoke();
         }
-        if (releaseSound != null)
-            audioSource.PlayOneShot(releaseSound);
-        onRelease.Invoke();
+        else if (!grabConLerp)
+        {
+            movingToOriginal = true;
+            isGrabbed = false;
+            if (rb != null)
+            {
+                rb.isKinematic = true;
+                rb.useGravity = false;
+            }
+            if (releaseSound != null)
+                audioSource.PlayOneShot(releaseSound);
+            onRelease.Invoke();
+        }
     }
 
     void Update()
     {
+        if (movingToOriginal)
+        {
+            if (rb != null)
+            {
+                rb.isKinematic = true;
+                rb.useGravity = false;
+            }
+            transform.position = Vector3.Lerp(transform.position, originalPosition, Time.deltaTime * releaseSpeed);
+            transform.rotation = Quaternion.Slerp(transform.rotation, originalRotation, Time.deltaTime * releaseSpeed);
+            if (Vector3.Distance(transform.position, originalPosition) < 0.005f)
+            {
+                movingToOriginal = false;
+                transform.position = originalPosition;
+                transform.rotation = originalRotation;
+                transform.SetParent(originalParent);
+                if (rb != null)
+                {
+                    rb.isKinematic = rbWasKinematic;
+                    rb.useGravity = !rbWasKinematic;
+                }
+            }
+            return;
+        }
+
+        if (!grabConLerp) return;
+
         if (movingToHand && grabTarget != null)
         {
             transform.position = Vector3.Lerp(transform.position, grabTarget.position, Time.deltaTime * grabSpeed);
@@ -128,23 +187,6 @@ public class SimpleGrab : MonoBehaviour
                 transform.localPosition = Vector3.zero;
                 transform.rotation = currentRot;
                 if (rb != null) rb.isKinematic = true;
-            }
-        }
-        else if (movingToOriginal)
-        {
-            transform.position = Vector3.Lerp(transform.position, originalPosition, Time.deltaTime * releaseSpeed);
-            transform.rotation = Quaternion.Slerp(transform.rotation, originalRotation, Time.deltaTime * releaseSpeed);
-            if (Vector3.Distance(transform.position, originalPosition) < 0.005f)
-            {
-                movingToOriginal = false;
-                transform.position = originalPosition;
-                transform.rotation = originalRotation;
-                transform.SetParent(originalParent);
-                if (rb != null)
-                {
-                    rb.isKinematic = rbWasKinematic;
-                    rb.useGravity = !rbWasKinematic;
-                }
             }
         }
 
