@@ -1,5 +1,5 @@
 using UnityEngine;
-using DG.Tweening;
+using System.Collections;
 
 public class TransicionVr : MonoBehaviour
 {
@@ -11,31 +11,26 @@ public class TransicionVr : MonoBehaviour
     public bool autoIniciarAlActivar;
 
     private static TransicionVr instancia;
-    private Material materialFade;
+    private Material materialInstancia;
     private string propiedadColor = "_Color";
-    private Sequence secuenciaActual;
-    private static bool dotweenInicializado;
+    private Coroutine rutinaActual;
 
     void Awake()
     {
-        if (!dotweenInicializado)
-        {
-            DOTween.Init();
-            dotweenInicializado = true;
-        }
         instancia = this;
         if (esferaFade == null)
         {
-            Debug.LogError("TransicionVr: esferaFade no asignada en " + name);
+            Debug.LogError("TransicionVr: esferaFade no asignado en " + name);
             return;
         }
-        materialFade = esferaFade.material;
-        if (materialFade.HasProperty("_BaseColor"))
+        materialInstancia = new Material(esferaFade.sharedMaterial);
+        esferaFade.material = materialInstancia;
+        if (materialInstancia.HasProperty("_BaseColor"))
             propiedadColor = "_BaseColor";
-        Debug.Log($"TransicionVr: Iniciada, esfera={esferaFade.name}, propiedadColor={propiedadColor}, alpha inicial={materialFade.GetColor(propiedadColor).a}");
-        Color c = materialFade.GetColor(propiedadColor);
+        Color c = materialInstancia.GetColor(propiedadColor);
+        Debug.Log($"TransicionVr: Iniciada, material={esferaFade.sharedMaterial.name}, propiedad={propiedadColor}, alpha={c.a}");
         c.a = 0f;
-        materialFade.SetColor(propiedadColor, c);
+        materialInstancia.SetColor(propiedadColor, c);
     }
 
     void OnEnable()
@@ -46,72 +41,107 @@ public class TransicionVr : MonoBehaviour
 
     void OnDisable()
     {
-        secuenciaActual?.Kill();
-        if (materialFade != null)
-            DOTween.Kill(materialFade);
+        if (rutinaActual != null)
+            StopCoroutine(rutinaActual);
+    }
+
+    private float ObtenerAlpha()
+    {
+        return materialInstancia.GetColor(propiedadColor).a;
+    }
+
+    private void FijarAlpha(float a)
+    {
+        Color c = materialInstancia.GetColor(propiedadColor);
+        c.a = Mathf.Clamp01(a);
+        materialInstancia.SetColor(propiedadColor, c);
+    }
+
+    private IEnumerator RutinaFundido(float desde, float hasta, float duracion)
+    {
+        float t = 0f;
+        while (t < duracion)
+        {
+            t += Time.deltaTime;
+            FijarAlpha(Mathf.Lerp(desde, hasta, t / duracion));
+            yield return null;
+        }
+        FijarAlpha(hasta);
     }
 
     public static void FundidoANegro(float duracion)
     {
-        if (instancia?.materialFade == null) return;
-        DOTween.Kill(instancia.materialFade);
-        instancia.materialFade.DOFade(1f, instancia.propiedadColor, duracion);
+        if (instancia?.materialInstancia == null) { Debug.LogWarning("TransicionVr.FundidoANegro: nulo"); return; }
+        instancia.Detener();
+        float desde = instancia.ObtenerAlpha();
+        instancia.rutinaActual = instancia.StartCoroutine(instancia.RutinaFundido(desde, 1f, duracion));
     }
 
     public static void AparecerDesdeNegro(float duracion)
     {
-        if (instancia?.materialFade == null) return;
-        DOTween.Kill(instancia.materialFade);
-        instancia.materialFade.DOFade(0f, instancia.propiedadColor, duracion);
+        if (instancia?.materialInstancia == null) { Debug.LogWarning("TransicionVr.AparecerDesdeNegro: nulo"); return; }
+        instancia.Detener();
+        float desde = instancia.ObtenerAlpha();
+        instancia.rutinaActual = instancia.StartCoroutine(instancia.RutinaFundido(desde, 0f, duracion));
     }
 
     public static void Parpadear(float duracionFundido, float espera)
     {
-        if (instancia?.materialFade == null) return;
-        Sequence seq = DOTween.Sequence();
-        seq.Append(instancia.materialFade.DOFade(1f, instancia.propiedadColor, duracionFundido));
-        seq.AppendInterval(espera);
-        seq.Append(instancia.materialFade.DOFade(0f, instancia.propiedadColor, duracionFundido));
+        if (instancia?.materialInstancia == null) { Debug.LogWarning("TransicionVr.Parpadear: nulo"); return; }
+        instancia.Detener();
+        instancia.rutinaActual = instancia.StartCoroutine(instancia.RutinaParpadear(duracionFundido, espera));
+    }
+
+    private IEnumerator RutinaParpadear(float duracionFundido, float espera)
+    {
+        yield return RutinaFundido(ObtenerAlpha(), 1f, duracionFundido);
+        yield return new WaitForSeconds(espera);
+        yield return RutinaFundido(ObtenerAlpha(), 0f, duracionFundido);
     }
 
     public static void ParpadearConTransporte()
     {
+        if (instancia == null) return;
         ParpadearConTransporte(instancia.duracionDefecto, instancia.duracionDefecto);
     }
 
     public static void ParpadearConTransporte(float duracionFundido, float espera)
     {
-        if (instancia?.materialFade == null) return;
+        if (instancia?.materialInstancia == null) { Debug.LogWarning("TransicionVr.ParpadearConTransporte: nulo"); return; }
+        instancia.Detener();
+        instancia.rutinaActual = instancia.StartCoroutine(instancia.RutinaParpadearConTransporte(duracionFundido, espera));
+    }
 
-        instancia.secuenciaActual?.Kill();
-        DOTween.Kill(instancia.materialFade);
-
-        Sequence seq = DOTween.Sequence();
-        instancia.secuenciaActual = seq;
-        seq.Append(instancia.materialFade.DOFade(1f, instancia.propiedadColor, duracionFundido));
-        seq.AppendCallback(() =>
+    private IEnumerator RutinaParpadearConTransporte(float duracionFundido, float espera)
+    {
+        yield return RutinaFundido(ObtenerAlpha(), 1f, duracionFundido);
+        Debug.Log("TransicionVr: Transportando objeto");
+        if (objetoATransportar != null && destino != null)
         {
-            if (instancia.objetoATransportar != null && instancia.destino != null)
-                instancia.objetoATransportar.transform.SetPositionAndRotation(instancia.destino.position, instancia.destino.rotation);
-            if (instancia.audioTransicion != null)
-                instancia.audioTransicion.Play();
-        });
-        seq.AppendInterval(espera);
-        seq.Append(instancia.materialFade.DOFade(0f, instancia.propiedadColor, duracionFundido));
-        seq.OnComplete(() =>
-        {
-            if (instancia != null)
-                instancia.gameObject.SetActive(false);
-        });
+            objetoATransportar.transform.SetPositionAndRotation(destino.position, destino.rotation);
+            Debug.Log($"TransicionVr: Objeto movido a {destino.position}");
+        }
+        if (audioTransicion != null)
+            audioTransicion.Play();
+        yield return new WaitForSeconds(espera);
+        yield return RutinaFundido(ObtenerAlpha(), 0f, duracionFundido);
+        Debug.Log("TransicionVr: Completado, desactivando");
+        gameObject.SetActive(false);
     }
 
     public static void ApagarAhora()
     {
-        if (instancia?.materialFade == null) return;
-        instancia.secuenciaActual?.Kill();
-        DOTween.Kill(instancia.materialFade);
-        Color c = instancia.materialFade.GetColor(instancia.propiedadColor);
-        c.a = 0f;
-        instancia.materialFade.SetColor(instancia.propiedadColor, c);
+        if (instancia?.materialInstancia == null) { Debug.LogWarning("TransicionVr.ApagarAhora: nulo"); return; }
+        instancia.Detener();
+        instancia.FijarAlpha(0f);
+    }
+
+    private void Detener()
+    {
+        if (rutinaActual != null)
+        {
+            StopCoroutine(rutinaActual);
+            rutinaActual = null;
+        }
     }
 }
