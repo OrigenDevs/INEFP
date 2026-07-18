@@ -27,12 +27,13 @@ public class OscilacionAutomatica : MonoBehaviour
 
     // Variables privadas
     private Vector3 posicionInicial;
+    private Vector3 posicionOriginal;
     private float tiempo = 0f;
 
     void Start()
     {
-        // Guardar la posición inicial del objeto
-        posicionInicial = transform.localPosition;
+        posicionOriginal = transform.localPosition;
+        posicionInicial = posicionOriginal;
     }
 
     void Update()
@@ -54,7 +55,18 @@ public class OscilacionAutomatica : MonoBehaviour
         transform.localPosition = posicionInicial + offset;
     }
 
-    // Método para resetear la oscilación
+    public void Pausa()
+    {
+        enabled = false;
+    }
+
+    public void Despausa()
+    {
+        posicionInicial = posicionOriginal;
+        transform.localPosition = posicionOriginal;
+        enabled = true;
+    }
+
     public void ResetearOscilacion()
     {
         tiempo = 0f;
