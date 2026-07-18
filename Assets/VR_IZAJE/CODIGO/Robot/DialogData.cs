@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Events;
 
 public class DialogData : MonoBehaviour
 {
@@ -15,7 +16,9 @@ public class DialogData : MonoBehaviour
     public GameObject[] objectsToActivateOnEnd;
     public GameObject[] objectsToDeactivateOnEnd;
 
-    public System.Action onDialogEnd;
+    public UnityEvent onDialogStart;
+    public UnityEvent onDialogEnd;
+    public System.Action onDialogEndAction;
 
     void OnEnable()
     {

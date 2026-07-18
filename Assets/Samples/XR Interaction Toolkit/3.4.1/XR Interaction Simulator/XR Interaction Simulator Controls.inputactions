@@ -268,7 +268,7 @@
                 {
                     "name": "negative",
                     "id": "2c01790c-a24a-4266-a2e9-74e2a1ca3fa7",
-                    "path": "<Keyboard>/numpad8",
+                    "path": "<Keyboard>/e",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
@@ -279,7 +279,7 @@
                 {
                     "name": "positive",
                     "id": "f5223aed-93c0-4633-8aa3-c393ce890872",
-                    "path": "<Keyboard>/numpad2",
+                    "path": "<Keyboard>/q",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
@@ -411,7 +411,7 @@
                 {
                     "name": "",
                     "id": "e8a0a3b9-06cf-40a8-86d8-1d8f1d704451",
-                    "path": "<Keyboard>/e",
+                    "path": "<Keyboard>/numpad2",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
@@ -422,7 +422,7 @@
                 {
                     "name": "",
                     "id": "b62df009-54c9-4b03-9721-07ca66fe1bdf",
-                    "path": "<Keyboard>/q",
+                    "path": "<Keyboard>/numpad1",
                     "interactions": "",
                     "processors": "",
                     "groups": "",

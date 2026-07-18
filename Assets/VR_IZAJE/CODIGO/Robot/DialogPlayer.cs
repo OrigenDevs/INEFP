@@ -54,6 +54,7 @@ public class DialogPlayer : MonoBehaviour
         Stop();
         currentDialog = data;
         onEndCallback = onEnd;
+        data.onDialogStart?.Invoke();
         if (audioSource == null)
         {
             audioSource = GetComponent<AudioSource>();
@@ -104,8 +105,8 @@ public class DialogPlayer : MonoBehaviour
         foreach (var obj in data.objectsToDeactivateOnEnd)
             if (obj != null) obj.SetActive(false);
 
-        if (data.onDialogEnd != null)
-            data.onDialogEnd.Invoke();
+        data.onDialogEnd?.Invoke();
+        data.onDialogEndAction?.Invoke();
 
         if (onEndCallback != null)
             onEndCallback.Invoke();
