@@ -1,7 +1,8 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.XR;
+using UnityEngine.XR.Interaction.Toolkit;
 using UnityEngine.XR.Interaction.Toolkit.Inputs.Readers;
-using UnityEngine.XR.Interaction.Toolkit.Interactors;
 
 public class ModoEditorVR : MonoBehaviour
 {
@@ -9,7 +10,6 @@ public class ModoEditorVR : MonoBehaviour
     public Camera vrCamera;
     public Transform cameraOffset;
     public Transform rightHand;
-    public XRDirectInteractor rightHandInteractor;
     public CharacterController characterController;
 
     [Header("Animacion Manos")]
@@ -32,9 +32,6 @@ public class ModoEditorVR : MonoBehaviour
     [Header("Movimiento Personaje (Flechas)")]
     public float moveSpeed = 3f;
 
-    [Header("Raycast Interaccion")]
-    public float raycastDistance = 10f;
-
     [Header("Toggle")]
     public KeyCode toggleKey = KeyCode.F1;
 
@@ -49,18 +46,8 @@ public class ModoEditorVR : MonoBehaviour
     private Vector3 originalHandLocalPos;
     private Quaternion originalHandLocalRot;
 
-    private bool triggerWasPressed;
-    private bool triggerPressed;
-    private bool gripWasPressed;
-    private bool gripPressed;
-
-    private RaycastHit lastHit;
-    private bool hitObject;
-
-    private SimpleGrab grabbedObject;
-    private Button3D hoveredButton;
-    private RotacionArrastre rotatingObject;
-    private CambioMaterialHover hoveredMaterialChanger;
+    private TrackedPoseDriver trackedPoseDriver;
+    private UnityEngine.XR.Interaction.Toolkit.Interactors.XRRayInteractor rayInteractor;
 
     void Start()
     {
@@ -76,6 +63,8 @@ public class ModoEditorVR : MonoBehaviour
         {
             originalHandLocalPos = rightHand.localPosition;
             originalHandLocalRot = rightHand.localRotation;
+            trackedPoseDriver = rightHand.GetComponent<TrackedPoseDriver>();
+            rayInteractor = rightHand.GetComponentInChildren<UnityEngine.XR.Interaction.Toolkit.Interactors.XRRayInteractor>();
         }
 
         if (cameraOffset != null)
@@ -98,18 +87,26 @@ public class ModoEditorVR : MonoBehaviour
         if (!active) return;
 
         HandleHandRotation(ms);
-        HandleClickInput(ms);
+        FeedTriggerInput(ms);
         HandleCameraRotation(kb);
         HandleMovement(kb);
     }
 
     void ActivateEditorMode()
     {
+        Cursor.visible = false;
+
         if (leftHand != null)
             leftHand.SetActive(false);
 
         if (rightHandAnimation != null)
             rightHandAnimation.enabled = false;
+
+        if (trackedPoseDriver != null)
+            trackedPoseDriver.enabled = false;
+
+        if (rayInteractor != null)
+            rayInteractor.selectInput.inputSourceMode = XRInputButtonReader.InputSourceMode.ManualValue;
 
         if (cameraPosition != null && vrCamera != null)
         {
@@ -125,18 +122,20 @@ public class ModoEditorVR : MonoBehaviour
 
         handYaw = 0f;
         handPitch = 0f;
-
-        if (rightHandInteractor != null)
-            rightHandInteractor.selectInput.inputSourceMode = XRInputButtonReader.InputSourceMode.ManualValue;
     }
 
     void DeactivateEditorMode()
     {
+        Cursor.visible = true;
+
         if (leftHand != null)
             leftHand.SetActive(true);
 
         if (rightHandAnimation != null)
             rightHandAnimation.enabled = true;
+
+        if (trackedPoseDriver != null)
+            trackedPoseDriver.enabled = true;
 
         if (vrCamera != null)
         {
@@ -153,42 +152,16 @@ public class ModoEditorVR : MonoBehaviour
         if (cameraOffset != null)
             cameraOffset.rotation = Quaternion.identity;
 
-        if (rightHandInteractor != null)
-        {
-            rightHandInteractor.selectInput.manualPerformed = false;
-            rightHandInteractor.activateInput.manualPerformed = false;
-        }
-
         if (rightHandAnimator != null)
         {
             rightHandAnimator.SetFloat("Trigger", 0f);
             rightHandAnimator.SetFloat("Grip", 0f);
         }
 
-        if (grabbedObject != null)
-            grabbedObject = null;
-        if (rotatingObject != null)
-        {
-            rotatingObject.TerminarRotacion();
-            rotatingObject = null;
-        }
-        if (hoveredButton != null)
-        {
-            hoveredButton.OnHoverEnd();
-            hoveredButton = null;
-        }
-        if (hoveredMaterialChanger != null)
-        {
-            hoveredMaterialChanger.OnHoverEnd();
-            hoveredMaterialChanger = null;
-        }
-
         cameraPitch = 0f;
         cameraYaw = 0f;
         handYaw = 0f;
         handPitch = 0f;
-        triggerWasPressed = false;
-        gripWasPressed = false;
     }
 
     void OnGUI()
@@ -198,7 +171,7 @@ public class ModoEditorVR : MonoBehaviour
         style.fontSize = 14;
         style.normal.textColor = Color.green;
         GUI.Label(new Rect(10, 10, 600, 30),
-            "MODO EDITOR (F1) | ClickIzq: agarrar/gatillo | ClickDer: grip | Mouse: mano | WASD: camara | Flechas: mover", style);
+            "MODO EDITOR (F1) | ClickIzq: gatillo | Mouse: mano | WASD: camara | Flechas: mover", style);
     }
 
     void HandleHandRotation(Mouse ms)
@@ -213,138 +186,16 @@ public class ModoEditorVR : MonoBehaviour
         rightHand.localRotation = Quaternion.Euler(handPitch, handYaw, 0f);
     }
 
-    void HandleClickInput(Mouse ms)
+    void FeedTriggerInput(Mouse ms)
     {
-        if (ms == null) return;
+        if (ms == null || rayInteractor == null) return;
 
-        triggerPressed = ms.leftButton.isPressed;
-        gripPressed = ms.rightButton.isPressed;
-
-        if (rightHandInteractor != null)
-        {
-            rightHandInteractor.selectInput.manualPerformed = triggerPressed;
-            rightHandInteractor.activateInput.manualPerformed = gripPressed;
-        }
+        bool triggerPressed = ms.leftButton.isPressed;
 
         if (rightHandAnimator != null)
-        {
             rightHandAnimator.SetFloat("Trigger", triggerPressed ? 1f : 0f);
-            rightHandAnimator.SetFloat("Grip", gripPressed ? 1f : 0f);
-        }
 
-        DoRaycast();
-
-        bool triggerJustPressed = triggerPressed && !triggerWasPressed;
-        bool triggerJustReleased = !triggerPressed && triggerWasPressed;
-        triggerWasPressed = triggerPressed;
-
-        bool gripJustPressed = gripPressed && !gripWasPressed;
-        bool gripJustReleased = !gripPressed && gripWasPressed;
-        gripWasPressed = gripPressed;
-
-        HandleHover();
-
-        if (triggerJustPressed)
-            HandleTriggerDown();
-        else if (triggerJustReleased)
-            HandleTriggerUp();
-
-        if (gripJustPressed)
-            HandleGripDown();
-        else if (gripJustReleased)
-            HandleGripUp();
-    }
-
-    void DoRaycast()
-    {
-        if (vrCamera == null) return;
-        Vector3 origin = vrCamera.transform.position;
-        Vector3 direction = vrCamera.transform.forward;
-        hitObject = Physics.Raycast(origin, direction, out lastHit, raycastDistance);
-    }
-
-    void HandleHover()
-    {
-        CambioMaterialHover cmh = null;
-        if (hitObject && lastHit.collider != null)
-            cmh = CambioMaterialHover.BuscarPorCollider(lastHit.collider);
-
-        if (cmh != hoveredMaterialChanger)
-        {
-            if (hoveredMaterialChanger != null) hoveredMaterialChanger.OnHoverEnd();
-            if (cmh != null) cmh.OnHoverStart();
-            hoveredMaterialChanger = cmh;
-        }
-
-        Button3D btn = null;
-        if (hitObject && lastHit.collider != null && grabbedObject == null)
-            btn = lastHit.collider.GetComponentInParent<Button3D>();
-
-        if (btn != hoveredButton)
-        {
-            if (hoveredButton != null) hoveredButton.OnHoverEnd();
-            if (btn != null) btn.OnHoverStart();
-            hoveredButton = btn;
-        }
-    }
-
-    void HandleTriggerDown()
-    {
-        if (!hitObject || lastHit.collider == null) return;
-
-        SimpleGrab sg = lastHit.collider.GetComponentInParent<SimpleGrab>();
-        if (sg != null)
-        {
-            grabbedObject = sg;
-            grabbedObject.Agarrar(rightHand);
-        }
-        else
-        {
-            RotacionArrastre ra = lastHit.collider.GetComponentInParent<RotacionArrastre>();
-            if (ra != null)
-            {
-                rotatingObject = ra;
-                rotatingObject.EmpezarRotacion(lastHit.point);
-            }
-            else if (hoveredButton != null)
-            {
-                hoveredButton.OnPress();
-            }
-            else
-            {
-                SistemaAutopartes sap = lastHit.collider.GetComponentInParent<SistemaAutopartes>();
-                if (sap != null)
-                    sap.Cambiar();
-            }
-        }
-    }
-
-    void HandleTriggerUp()
-    {
-        if (grabbedObject != null)
-        {
-            grabbedObject.Soltar();
-            grabbedObject = null;
-        }
-
-        if (rotatingObject != null)
-        {
-            rotatingObject.TerminarRotacion();
-            rotatingObject = null;
-        }
-
-        if (hoveredButton != null)
-        {
-            hoveredButton.OnRelease();
-        }
-    }
-
-    void HandleGripDown()
-    {
-    }
-
-    void HandleGripUp()
-    {
+        rayInteractor.selectInput.QueueManualState(triggerPressed, triggerPressed ? 1f : 0f);
     }
 
     void HandleCameraRotation(Keyboard kb)
