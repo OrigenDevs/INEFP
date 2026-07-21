@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.XR.Interaction.Toolkit;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
+using System.Linq;
 
 [RequireComponent(typeof(XRGrabInteractable))]
 public class SimpleGrab : MonoBehaviour
@@ -17,8 +18,11 @@ public class SimpleGrab : MonoBehaviour
     public Transform nuevaPosicionBase;
     public AudioClip grabSound;
     public AudioClip releaseSound;
+    public bool soltarAuto;
+    public float tiempoSoltarAuto = 3f;
 
     private Transform grabTarget;
+    private Coroutine rutinaSoltarAuto;
     private Vector3 originalPosition;
     private Quaternion originalRotation;
     private Transform originalParent;
@@ -72,12 +76,14 @@ public class SimpleGrab : MonoBehaviour
             if (grabSound != null)
                 audioSource.PlayOneShot(grabSound);
             onGrab.Invoke();
+            IniciarAutoSoltar();
         }
     }
 
     void OnSelectExited(SelectExitEventArgs args)
     {
-        Soltar();
+        DetenerAutoSoltar();
+        SoltarLogica();
     }
 
     public void Agarrar(Transform target)
@@ -102,12 +108,26 @@ public class SimpleGrab : MonoBehaviour
         if (grabSound != null)
             audioSource.PlayOneShot(grabSound);
         onGrab.Invoke();
+        IniciarAutoSoltar();
     }
 
     public void Soltar()
     {
+        DetenerAutoSoltar();
         if (!isGrabbed && !movingToOriginal) return;
 
+        if (grabInteractable.interactionManager != null && grabInteractable.interactorsSelecting.Count() > 0)
+        {
+            var interactor = grabInteractable.interactorsSelecting.First();
+            grabInteractable.interactionManager.SelectExit(interactor, grabInteractable);
+            return;
+        }
+
+        SoltarLogica();
+    }
+
+    public void SoltarLogica()
+    {
         if (grabConLerp && isGrabbed)
         {
             isGrabbed = false;
@@ -203,5 +223,27 @@ public class SimpleGrab : MonoBehaviour
                 }
             }
         }
+    }
+
+    private void IniciarAutoSoltar()
+    {
+        if (!soltarAuto) return;
+        DetenerAutoSoltar();
+        rutinaSoltarAuto = StartCoroutine(RutinaAutoSoltar());
+    }
+
+    private void DetenerAutoSoltar()
+    {
+        if (rutinaSoltarAuto != null)
+        {
+            StopCoroutine(rutinaSoltarAuto);
+            rutinaSoltarAuto = null;
+        }
+    }
+
+    private System.Collections.IEnumerator RutinaAutoSoltar()
+    {
+        yield return new WaitForSeconds(tiempoSoltarAuto);
+        Soltar();
     }
 }
