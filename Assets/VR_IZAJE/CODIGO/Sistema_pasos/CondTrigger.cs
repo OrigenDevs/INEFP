@@ -5,12 +5,14 @@ public class CondTrigger : MonoBehaviour
 {
     public DialogPlayer dialogPlayer;
     public int minObjetos = 1;
+    public string tagRequerida = "ObjetoInteractuable";
 
     private HashSet<GameObject> objetosDentro = new HashSet<GameObject>();
 
     void OnTriggerEnter(Collider other)
     {
         if (dialogPlayer == null) return;
+        if (!other.CompareTag(tagRequerida)) return;
 
         objetosDentro.Add(other.gameObject);
 

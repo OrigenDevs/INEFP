@@ -32,8 +32,9 @@ public class ModoEditorVR : MonoBehaviour
     [Header("Movimiento Personaje (Flechas)")]
     public float moveSpeed = 3f;
 
-    [Header("Toggle")]
-    public KeyCode toggleKey = KeyCode.F1;
+    [Header("Avanzar / Saltar Dialogos")]
+    public Key advanceKey = Key.E;
+    public Key skipKey = Key.R;
 
     private bool active = false;
     private float cameraYaw;
@@ -47,6 +48,7 @@ public class ModoEditorVR : MonoBehaviour
     private Quaternion originalHandLocalRot;
 
     private TrackedPoseDriver trackedPoseDriver;
+    private TrackedPoseDriver cameraTrackedPoseDriver;
     private UnityEngine.XR.Interaction.Toolkit.Interactors.XRRayInteractor rayInteractor;
 
     void Start()
@@ -57,6 +59,7 @@ public class ModoEditorVR : MonoBehaviour
         {
             originalCameraLocalPos = vrCamera.transform.localPosition;
             originalCameraLocalRot = vrCamera.transform.localRotation;
+            cameraTrackedPoseDriver = vrCamera.GetComponent<TrackedPoseDriver>();
         }
 
         if (rightHand != null)
@@ -68,7 +71,9 @@ public class ModoEditorVR : MonoBehaviour
         }
 
         if (cameraOffset != null)
-            cameraYaw = cameraOffset.eulerAngles.y;
+            cameraYaw = cameraOffset.localEulerAngles.y;
+        if (vrCamera != null)
+            cameraPitch = vrCamera.transform.localEulerAngles.x;
     }
 
     void Update()
@@ -77,7 +82,7 @@ public class ModoEditorVR : MonoBehaviour
         var ms = Mouse.current;
         if (kb == null) return;
 
-        if (kb[Key.F1].wasPressedThisFrame)
+        if (kb[Key.F1].wasPressedThisFrame || kb[Key.Escape].wasPressedThisFrame && active)
         {
             active = !active;
             if (active) ActivateEditorMode();
@@ -90,11 +95,13 @@ public class ModoEditorVR : MonoBehaviour
         FeedTriggerInput(ms);
         HandleCameraRotation(kb);
         HandleMovement(kb);
+        HandleDialogKeys(kb);
     }
 
     void ActivateEditorMode()
     {
         Cursor.visible = false;
+        Cursor.lockState = CursorLockMode.Locked;
 
         if (leftHand != null)
             leftHand.SetActive(false);
@@ -104,6 +111,9 @@ public class ModoEditorVR : MonoBehaviour
 
         if (trackedPoseDriver != null)
             trackedPoseDriver.enabled = false;
+
+        if (cameraTrackedPoseDriver != null)
+            cameraTrackedPoseDriver.enabled = false;
 
         if (rayInteractor != null)
             rayInteractor.selectInput.inputSourceMode = XRInputButtonReader.InputSourceMode.ManualValue;
@@ -127,6 +137,7 @@ public class ModoEditorVR : MonoBehaviour
     void DeactivateEditorMode()
     {
         Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.None;
 
         if (leftHand != null)
             leftHand.SetActive(true);
@@ -136,6 +147,9 @@ public class ModoEditorVR : MonoBehaviour
 
         if (trackedPoseDriver != null)
             trackedPoseDriver.enabled = true;
+
+        if (cameraTrackedPoseDriver != null)
+            cameraTrackedPoseDriver.enabled = true;
 
         if (vrCamera != null)
         {
@@ -150,7 +164,7 @@ public class ModoEditorVR : MonoBehaviour
         }
 
         if (cameraOffset != null)
-            cameraOffset.rotation = Quaternion.identity;
+            cameraOffset.localRotation = Quaternion.identity;
 
         if (rightHandAnimator != null)
         {
@@ -170,8 +184,8 @@ public class ModoEditorVR : MonoBehaviour
         GUIStyle style = new GUIStyle(GUI.skin.label);
         style.fontSize = 14;
         style.normal.textColor = Color.green;
-        GUI.Label(new Rect(10, 10, 600, 30),
-            "MODO EDITOR (F1) | ClickIzq: gatillo | Mouse: mano | WASD: camara | Flechas: mover", style);
+        GUI.Label(new Rect(10, 10, 800, 30),
+            "EDITOR (F1) | Click: trigger | Mouse: mano | WASD: cam | Flechas: mover | E: avanzar | R: saltar", style);
     }
 
     void HandleHandRotation(Mouse ms)
@@ -198,9 +212,23 @@ public class ModoEditorVR : MonoBehaviour
         rayInteractor.selectInput.QueueManualState(triggerPressed, triggerPressed ? 1f : 0f);
     }
 
+    void HandleDialogKeys(Keyboard kb)
+    {
+        if (kb[advanceKey].wasPressedThisFrame)
+        {
+            var dp = FindFirstObjectByType<DialogPlayer>();
+            if (dp != null) dp.Avanzar();
+        }
+        if (kb[skipKey].wasPressedThisFrame)
+        {
+            var dp = FindFirstObjectByType<DialogPlayer>();
+            if (dp != null) dp.Saltar();
+        }
+    }
+
     void HandleCameraRotation(Keyboard kb)
     {
-        if (cameraOffset == null) return;
+        if (cameraOffset == null || vrCamera == null) return;
 
         if (kb[Key.A].isPressed) cameraYaw -= cameraRotationSpeed * Time.deltaTime;
         if (kb[Key.D].isPressed) cameraYaw += cameraRotationSpeed * Time.deltaTime;
@@ -208,7 +236,9 @@ public class ModoEditorVR : MonoBehaviour
         if (kb[Key.S].isPressed) cameraPitch += cameraRotationSpeed * Time.deltaTime;
 
         cameraPitch = Mathf.Clamp(cameraPitch, -85f, 85f);
-        cameraOffset.rotation = Quaternion.Euler(cameraPitch, cameraYaw, 0f);
+
+        cameraOffset.localRotation = Quaternion.AngleAxis(cameraYaw, Vector3.up);
+        vrCamera.transform.localRotation = Quaternion.AngleAxis(cameraPitch, Vector3.right);
     }
 
     void HandleMovement(Keyboard kb)
