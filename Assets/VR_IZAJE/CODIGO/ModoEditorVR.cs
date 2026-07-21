@@ -46,6 +46,7 @@ public class ModoEditorVR : MonoBehaviour
     private Quaternion originalCameraLocalRot;
     private Vector3 originalHandLocalPos;
     private Quaternion originalHandLocalRot;
+    private Transform originalHandParent;
 
     private TrackedPoseDriver trackedPoseDriver;
     private TrackedPoseDriver cameraTrackedPoseDriver;
@@ -66,14 +67,10 @@ public class ModoEditorVR : MonoBehaviour
         {
             originalHandLocalPos = rightHand.localPosition;
             originalHandLocalRot = rightHand.localRotation;
+            originalHandParent = rightHand.parent;
             trackedPoseDriver = rightHand.GetComponent<TrackedPoseDriver>();
             rayInteractor = rightHand.GetComponentInChildren<UnityEngine.XR.Interaction.Toolkit.Interactors.XRRayInteractor>();
         }
-
-        if (cameraOffset != null)
-            cameraYaw = cameraOffset.localEulerAngles.y;
-        if (vrCamera != null)
-            cameraPitch = vrCamera.transform.localEulerAngles.x;
     }
 
     void Update()
@@ -91,9 +88,9 @@ public class ModoEditorVR : MonoBehaviour
 
         if (!active) return;
 
+        HandleCameraRotation(kb);
         HandleHandRotation(ms);
         FeedTriggerInput(ms);
-        HandleCameraRotation(kb);
         HandleMovement(kb);
         HandleDialogKeys(kb);
     }
@@ -126,10 +123,16 @@ public class ModoEditorVR : MonoBehaviour
 
         if (handPosition != null && rightHand != null)
         {
+            rightHand.SetParent(vrCamera.transform);
             rightHand.localPosition = handPosition.localPosition;
             rightHand.localRotation = handPosition.localRotation;
         }
 
+        if (cameraOffset != null)
+            cameraOffset.localRotation = Quaternion.identity;
+
+        cameraYaw = 0f;
+        cameraPitch = 0f;
         handYaw = 0f;
         handPitch = 0f;
     }
@@ -159,6 +162,7 @@ public class ModoEditorVR : MonoBehaviour
 
         if (rightHand != null)
         {
+            rightHand.SetParent(originalHandParent);
             rightHand.localPosition = originalHandLocalPos;
             rightHand.localRotation = originalHandLocalRot;
         }
@@ -228,7 +232,7 @@ public class ModoEditorVR : MonoBehaviour
 
     void HandleCameraRotation(Keyboard kb)
     {
-        if (cameraOffset == null || vrCamera == null) return;
+        if (vrCamera == null) return;
 
         if (kb[Key.A].isPressed) cameraYaw -= cameraRotationSpeed * Time.deltaTime;
         if (kb[Key.D].isPressed) cameraYaw += cameraRotationSpeed * Time.deltaTime;
@@ -237,16 +241,15 @@ public class ModoEditorVR : MonoBehaviour
 
         cameraPitch = Mathf.Clamp(cameraPitch, -85f, 85f);
 
-        cameraOffset.localRotation = Quaternion.AngleAxis(cameraYaw, Vector3.up);
-        vrCamera.transform.localRotation = Quaternion.AngleAxis(cameraPitch, Vector3.right);
+        vrCamera.transform.rotation = Quaternion.AngleAxis(cameraYaw, Vector3.up) * Quaternion.AngleAxis(cameraPitch, Vector3.right);
     }
 
     void HandleMovement(Keyboard kb)
     {
         if (characterController == null) return;
 
-        Vector3 forward = cameraOffset != null ? cameraOffset.forward : Vector3.forward;
-        Vector3 right = cameraOffset != null ? cameraOffset.right : Vector3.right;
+        Vector3 forward = Quaternion.AngleAxis(cameraYaw, Vector3.up) * Vector3.forward;
+        Vector3 right = Quaternion.AngleAxis(cameraYaw, Vector3.up) * Vector3.right;
         forward.y = 0f; right.y = 0f;
         forward.Normalize(); right.Normalize();
 
