@@ -97,8 +97,8 @@ public class ModoEditorVR : MonoBehaviour
 
     void ActivateEditorMode()
     {
-        Cursor.visible = false;
-        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.None;
 
         if (leftHand != null)
             leftHand.SetActive(false);

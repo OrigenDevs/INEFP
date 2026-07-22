@@ -23306,7 +23306,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 78d1e37b812b7584aa223d8776fe1b41, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VolverAMenuCorrutina
-  nombreEscena: HOME
+  nombreEscena: HOME FATIGA
   segundosEspera: 80
 --- !u!1 &1889702149
 GameObject:
