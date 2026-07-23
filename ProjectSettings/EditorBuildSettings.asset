@@ -12,7 +12,7 @@ EditorBuildSettings:
     path: Assets/VR_IZAJE/ESCENAS/Refactorizado/HOME FATIGA.unity
     guid: 7f3e511e2423fba47a4cbaf0bf711fc0
   - enabled: 1
-    path: Assets/VR_IZAJE/ESCENAS/Refactorizado/CAMION.unity
+    path: Assets/VR_IZAJE/ESCENAS/Refactorizado/VR - Somnolencia/CAMION.unity
     guid: 473f66ed15f3b1f409436f58a80cfbe2
   - enabled: 0
     path: Assets/VR_IZAJE/ESCENAS/Refactorizado/HOME.unity
