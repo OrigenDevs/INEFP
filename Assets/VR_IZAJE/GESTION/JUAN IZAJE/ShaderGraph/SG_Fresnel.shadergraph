@@ -308,7 +308,7 @@
         },
         "preventRotation": false
     },
-    "m_Path": "a Render Pipeline/MascaraRecorte",
+    "m_Path": "a Render Pipeline/Fresnel",
     "m_GraphPrecision": 1,
     "m_PreviewMode": 2,
     "m_OutputNode": {
